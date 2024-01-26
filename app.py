@@ -1,9 +1,7 @@
-import hashlib
 import os
-import secrets
+import hashlib
 from flask import Flask, jsonify, request, send_file
 from flask_sqlalchemy import SQLAlchemy
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 
 '''
@@ -50,6 +48,12 @@ def authenticate():
 '''
 REGISTRATION
 '''
+# Define the base directory for user files
+BASE_DIR = 'user_vaults'
+# Create the directory if it doesn't exist
+if not os.path.exists(BASE_DIR):
+    os.makedirs(BASE_DIR)
+
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -82,50 +86,40 @@ def register():
 '''
 FILE MANAGEMENT
 '''
-# Define the base directory for user files
-BASE_DIR = 'user_files'
-# Create the directory if it doesn't exist
-if not os.path.exists(BASE_DIR):
-    os.makedirs(BASE_DIR)
-
 @app.route('/upload', methods=['POST'])
-def upload():
-    data = request.data
-    username = request.headers.get('Username')
+def upload_file():
+    username = request.form.get('username')
+    file = request.files['file']
+
+    # Check if the user exists
     user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
 
-    if user:
-        salt = user.salt
-        user_folder = os.path.join(BASE_DIR, username)
-        os.makedirs(user_folder, exist_ok=True)
-        
-        file_path = os.path.join(user_folder, f"{username}_file.zip.enc")
+    # Save the uploaded file to the user's folder
+    user_folder = os.path.join(BASE_DIR, username)
+    file_path = os.path.join(user_folder, file.filename)
+    file.save(file_path)
 
-        # Save the encrypted file directly
-        with open(file_path, 'wb') as file:
-            file.write(data)
+    return jsonify({'message': 'File uploaded successfully'}), 201
 
-        return jsonify({'message': 'File uploaded successfully'})
-    
-    return jsonify({'message': 'User not found'}), 404
-
-@app.route('/download', methods=['GET'])
-def download():
-    username = request.headers.get('Username')
+# Endpoint for file download
+@app.route('/download/<username>/<filename>', methods=['GET'])
+def download_file(username, filename):
+    # Check if the user exists
     user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
 
-    if user:
-        user_folder = os.path.join(BASE_DIR, username)
-        file_path = os.path.join(user_folder, f"{username}_file.zip.enc")
+    # Check if the file exists
+    file_path = os.path.join(BASE_DIR, username, filename)
+    if not os.path.exists(file_path):
+        return jsonify({'message': 'File not found'}), 404
 
-        # Send the encrypted file directly
-        return send_file(file_path, mimetype='application/octet-stream', as_attachment=True)
-    
-    return jsonify({'message': 'User not found'}), 404
-
+    return send_file(file_path, as_attachment=True)
 
 '''
 RUN APP
 '''
 if __name__ == '__main__':
-    app.run(ssl_context=('ssl_keys/cert.pem', 'ssl_keys/key.pem'), debug=True)   
+    app.run(host='0.0.0.0', port=5000, ssl_context=('ssl_keys/cert.pem', 'ssl_keys/key.pem'), debug=True)   

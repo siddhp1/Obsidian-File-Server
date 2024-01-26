@@ -1,3 +1,7 @@
+# Files
+user_vaults/
+test_vault/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

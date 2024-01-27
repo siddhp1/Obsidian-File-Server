@@ -4,4 +4,4 @@ HTTPS file server to sync Obsidian vaults between multiple devices. I am working
 
 The server is built using Python Flask, and I have also made a simple console-based app to test the server's functionality.
 
-The program can be repurposed to store any files. 
+The program can be repurposed for any storage application. 

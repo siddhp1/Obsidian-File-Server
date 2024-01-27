@@ -10,7 +10,7 @@ key.generate_key(crypto.TYPE_RSA, 4096)
 
 # Generate a self-signed certificate
 cert = crypto.X509()
-cert.get_subject().CN = "Your Common Name"
+cert.get_subject().CN = "Testing"
 cert.set_serial_number(1000)
 cert.gmtime_adj_notBefore(0)
 cert.gmtime_adj_notAfter(365 * 24 * 60 * 60)  # Valid for 365 days
